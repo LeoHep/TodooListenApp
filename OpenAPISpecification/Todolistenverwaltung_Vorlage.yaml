@@ -175,6 +175,31 @@ paths:
         400:
           description: Bad request
           content: {}
+  /todo-list/{list_id}:
+    get:
+      tags:
+      - Listenverwaltung
+      summary: Get a single list
+      operationId: getList
+      parameters:
+      - name: list_id
+        in: path
+        description: list id
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: List returned
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/TodoList'
+        404:
+          description: Invalid list id
+          content: {}
     delete:
       tags:
       - Listenverwaltung
