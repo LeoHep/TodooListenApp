@@ -53,7 +53,12 @@ paths:
       responses:
         200:
           description: List was deleted
-          content: {}
+          content: 
+            application/json:
+              schema:
+                type: object
+                items:
+                $ref: '#/components/schemas/SuccessMessage'
         404:
           description: Invalid list id
           content: {}
@@ -107,3 +112,7 @@ components:
         list_id:
           type: string
           format: uuid
+    SuccessMessage:
+      type: object
+      properties:
+        msg: string
