@@ -120,6 +120,47 @@ paths:
         400:
           description: Bad request
           content: {}
+  /todo-list/{list_id}/entry/{entry_id}:
+    put:
+      tags:
+      - Listenverwaltung
+      summary: update an entry
+      operationId: putEntry
+      parameters:
+      - name: list_id
+        in: path
+        description: list id
+        required: true
+        schema:
+          type: string
+      - name: entry_id
+        in: path
+        description: entry id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: list entry
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoEntry'
+        required: true
+      responses:
+        200:
+          description: List entry returned
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/TodoEntry'
+        404:
+          description: Invalid list or entry id
+          content: {}
+        400:
+          description: Bad request
+          content: {}
 components:
   schemas:
     TodoList:
