@@ -85,6 +85,41 @@ paths:
         400:
           description: List could not be added
           content: {}
+  /todo-list/{list_id}/entry:
+    post:
+      tags:
+      - Listenverwaltung
+      summary: add an entry to existing list
+      operationId: postEntry
+      parameters:
+      - name: list_id
+        in: path
+        description: list id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: list entry
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoEntry'
+        required: true
+      responses:
+        200:
+          description: List entry returned
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/TodoEntry'
+        404:
+          description: Invalid list id
+          content: {}
+        400:
+          description: Bad request
+          content: {}
 components:
   schemas:
     TodoList:
