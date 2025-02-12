@@ -161,6 +161,36 @@ paths:
         400:
           description: Bad request
           content: {}
+    delete:
+      tags:
+      - Listenverwaltung
+      summary: delete an entry
+      operationId: deleteEntry
+      parameters:
+      - name: list_id
+        in: path
+        description: list id
+        required: true
+        schema:
+          type: string
+      - name: entry_id
+        in: path
+        description: entry id
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: List was deleted
+          content: 
+            application/json:
+              schema:
+                type: object
+                items:
+                $ref: '#/components/schemas/SuccessMessage'
+        404:
+          description: Invalid list id
+          content: {}
 components:
   schemas:
     TodoList:
