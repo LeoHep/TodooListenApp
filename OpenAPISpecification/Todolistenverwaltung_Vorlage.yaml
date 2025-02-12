@@ -85,6 +85,20 @@ paths:
         400:
           description: List could not be added
           content: {}
+    get:
+      tags:
+      - Listenverwaltung
+      summary: get all todo lists
+      operationId: getLists
+      responses:
+        200:
+          description: Lists retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodoList'
   /todo-list/{list_id}/entry:
     post:
       tags:
