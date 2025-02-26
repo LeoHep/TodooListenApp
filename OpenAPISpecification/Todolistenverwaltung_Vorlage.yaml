@@ -1,4 +1,4 @@
-openapi: 3.1.1
+openapi: 3.0.3
 info:
   title: Todo-Listen-Verwaltung
   description: "Anwendung zu Verwaltung von Todo Listen"
@@ -18,7 +18,7 @@ paths:
       tags:
       - Listenverwaltung
       summary: Get all items from list
-      operationId: getList
+      operationId: getListEntries
       parameters:
       - name: list_id
         in: path
@@ -35,30 +35,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TodoEntry'
-        404:
-          description: Invalid list id
-          content: {}
-    delete:
-      tags:
-      - Listenverwaltung
-      summary: Delete a list
-      operationId: deleteList
-      parameters:
-      - name: list_id
-        in: path
-        description: list id
-        required: true
-        schema:
-          type: string
-      responses:
-        200:
-          description: List was deleted
-          content: 
-            application/json:
-              schema:
-                type: object
-                items:
-                $ref: '#/components/schemas/SuccessMessage'
         404:
           description: Invalid list id
           content: {}
@@ -88,7 +64,7 @@ paths:
     get:
       tags:
       - Listenverwaltung
-      summary: get all todo lists
+      summary: Get all todo lists
       operationId: getLists
       responses:
         200:
@@ -103,7 +79,7 @@ paths:
     post:
       tags:
       - Listenverwaltung
-      summary: add an entry to existing list
+      summary: Add an entry to existing list
       operationId: postEntry
       parameters:
       - name: list_id
@@ -138,7 +114,7 @@ paths:
     put:
       tags:
       - Listenverwaltung
-      summary: update an entry
+      summary: Update an entry
       operationId: putEntry
       parameters:
       - name: list_id
@@ -203,18 +179,12 @@ paths:
     delete:
       tags:
       - Listenverwaltung
-      summary: delete an entry
-      operationId: deleteEntry
+      summary: Delete a list with all entries
+      operationId: deleteList
       parameters:
       - name: list_id
         in: path
         description: list id
-        required: true
-        schema:
-          type: string
-      - name: entry_id
-        in: path
-        description: entry id
         required: true
         schema:
           type: string
@@ -259,4 +229,5 @@ components:
     SuccessMessage:
       type: object
       properties:
-        msg: string
+        msg: 
+          type: string
