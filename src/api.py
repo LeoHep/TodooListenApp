@@ -101,6 +101,18 @@ def get_all_todos_for_list(list_id):
                 temp_todos.append(t)
         return jsonify(temp_todos), 200
     else: abort(405)
+    
+@app.route('/todo-list/<list_id>/entry', methods=['POST'])
+def add_entry(list_id):
+    if not any(l['id'] == list_id for l in todo_lists):
+        abort(404)
+    if request.method == 'POST':  
+        new_entry = request.get_json(force=True)
+        new_entry['id'] = str(uuid.uuid4())
+        new_entry['list_id'] = list_id
+        todos.append(new_entry)
+        return jsonify(new_entry), 200
+    else: abort(405)
 
 if __name__ == '__main__':
     # start Flask server
