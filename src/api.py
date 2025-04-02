@@ -82,6 +82,12 @@ def add_new_list():
         return jsonify(new_list), 200
     else: abort(405)
 
+# define endpoint for getting all lists
+@app.route('/todo-lists', methods=['GET'])
+def get_all_lists():
+    if request.method == 'GET':
+        return jsonify(todo_lists)
+    else: abort(405)
 
 # define endpoint for getting all lists
 @app.route('/lists', methods=['GET'])
