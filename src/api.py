@@ -70,15 +70,17 @@ def handle_list(list_id):
 
 
 # define endpoint for adding a new list
-@app.route('/list', methods=['POST'])
+@app.route('/todo-list', methods=['POST'])
 def add_new_list():
-    # make JSON from POST data (even if content type is not set correctly)
-    new_list = request.get_json(force=True)
-    print('Got new list to be added: {}'.format(new_list))
-    # create id for new list, save it and return the list with id
-    new_list['id'] = uuid.uuid4()
-    todo_lists.append(new_list)
-    return jsonify(new_list), 200
+    if request.method == 'POST':
+        # make JSON from POST data (even if content type is not set correctly)
+        new_list = request.get_json(force=True)
+        print('Got new list to be added: {}'.format(new_list))
+        # create id for new list, save it and return the list with id
+        new_list['id'] = uuid.uuid4()
+        todo_lists.append(new_list)
+        return jsonify(new_list), 200
+    else: abort(405)
 
 
 # define endpoint for getting all lists
