@@ -10,14 +10,14 @@ app = Flask(__name__)
 todo_list_1_id = '1318d3d1-d979-47e1-a225-dab1751dbe75'
 todo_list_2_id = '3062dc25-6b80-4315-bb1d-a7c86b014c65'
 todo_list_3_id = '44b02e00-03bc-451d-8d01-0c67ea866fee'
-todo_1_id = uuid.uuid4()
-todo_2_id = uuid.uuid4()
-todo_3_id = uuid.uuid4()
-todo_4_id = uuid.uuid4()
-user_1_id = uuid.uuid4()
-user_2_id = uuid.uuid4()
-user_3_id = uuid.uuid4()
-user_4_id = uuid.uuid4()
+todo_1_id = str(uuid.uuid4())
+todo_2_id = str(uuid.uuid4())
+todo_3_id = str(uuid.uuid4())
+todo_4_id = str(uuid.uuid4())
+user_1_id = str(uuid.uuid4())
+user_2_id = str(uuid.uuid4())
+user_3_id = str(uuid.uuid4())
+user_4_id = str(uuid.uuid4())
 
 # define internal data structures with example data
 todo_lists = [
@@ -27,10 +27,10 @@ todo_lists = [
 ]
 todos = [
     {'id': todo_1_id, 'name': 'Milch', 'description': 'Einkaufslisteneintrag', 'list_id': todo_list_1_id, 'user_id': user_1_id},
-    {'id': todo_2_id, 'name': 'Arbeitsblätter ausdrucken', 'Einkaufslisteneintrag': '', 'list_id': todo_list_2_id, 'user_id': user_1_id},
-    {'id': todo_3_id, 'name': 'Kinokarten kaufen', 'Einkaufslisteneintrag': '', 'list_id': todo_list_3_id, 'user_id': user_1_id},
-    {'id': todo_3_id, 'name': 'Eier', 'Einkaufslisteneintrag': '', 'list_id': todo_list_1_id, 'user_id': user_1_id},
-]
+    {'id': todo_2_id, 'name': 'Arbeitsblätter ausdrucken', 'description': 'Einkaufslisteneintrag', 'list_id': todo_list_2_id, 'user_id': user_1_id},
+    {'id': todo_3_id, 'name': 'Kinokarten kaufen', 'description': 'Einkaufslisteneintrag', 'list_id': todo_list_3_id, 'user_id': user_1_id},
+    {'id': todo_4_id, 'name': 'Eier', 'description': 'Einkaufslisteneintrag', 'list_id': todo_list_1_id, 'user_id': user_1_id},
+] 
 
 # add some headers to allow cross origin access to the API on this server, necessary for using preview in Swagger Editor!
 @app.after_request
@@ -40,8 +40,13 @@ def apply_cors_header(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
-# define endpoint for getting and deleting existing todo lists
-@app.route('/list/<list_id>', methods=['GET', 'DELETE'])
+@app.errorhandler(500)
+def internal_server_error(e):
+    return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+
+
+# define endpoint for getting and deleting existing lists
+@app.route('/todo-list/<list_id>', methods=['GET', 'DELETE'])
 def handle_list(list_id):
     # find todo list depending on given list id
     list_item = None
@@ -55,12 +60,13 @@ def handle_list(list_id):
     if request.method == 'GET':
         # find all todo entries for the todo list with the given id
         print('Returning todo list...')
-        return jsonify([i for i in todos if i['list'] == list_id])
+        return jsonify([i for i in todo_lists if i['id'] == list_id])
     elif request.method == 'DELETE':
         # delete list with given id
         print('Deleting todo list...')
         todo_lists.remove(list_item)
         return '', 200
+    else: abort(405) 
 
 
 # define endpoint for adding a new list
