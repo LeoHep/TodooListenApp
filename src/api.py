@@ -114,6 +114,30 @@ def add_entry(list_id):
         return jsonify(new_entry), 200
     else: abort(405)
 
+@app.route('/todo-list/<list_id>/entry/<entry_id>', methods=['PUT', 'DELETE'])
+def handle_entry(list_id, entry_id):
+    list_id = str(list_id) 
+    entry_id = str(entry_id)
+
+    if not any(str(l['id']) == list_id for l in todo_lists) or not any(str(t['id']) == entry_id for t in todos):
+        abort(404)
+
+    todo_entry = next((t for t in todos if str(t['id']) == entry_id and str(t['list_id']) == list_id), None)
+
+    if request.method == 'PUT':
+        if not todo_entry:
+            abort(404)
+        data = request.get_json(force=True)
+        todo_entry.update(data)
+        return jsonify(todo_entry)
+
+    if request.method == 'DELETE': 
+        print('Deleting todo...')
+        todos.remove(todo_entry)
+        return '', 200
+    
+    else: abort(405)
+
 if __name__ == '__main__':
     # start Flask server
     app.debug = True
