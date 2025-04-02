@@ -1,11 +1,3 @@
-"""
-Example script showing how to represent todo lists and todo entries in Python
-data structures and how to implement endpoint for a REST API with Flask.
-
-Requirements:
-* flask
-"""
-
 import uuid 
 
 from flask import Flask, request, jsonify, abort
@@ -22,6 +14,10 @@ todo_1_id = uuid.uuid4()
 todo_2_id = uuid.uuid4()
 todo_3_id = uuid.uuid4()
 todo_4_id = uuid.uuid4()
+user_1_id = uuid.uuid4()
+user_2_id = uuid.uuid4()
+user_3_id = uuid.uuid4()
+user_4_id = uuid.uuid4()
 
 # define internal data structures with example data
 todo_lists = [
@@ -30,10 +26,10 @@ todo_lists = [
     {'id': todo_list_3_id, 'name': 'Privat'},
 ]
 todos = [
-    {'id': todo_1_id, 'name': 'Milch', 'description': '', 'list': todo_list_1_id},
-    {'id': todo_2_id, 'name': 'Arbeitsblätter ausdrucken', 'description': '', 'list': todo_list_2_id},
-    {'id': todo_3_id, 'name': 'Kinokarten kaufen', 'description': '', 'list': todo_list_3_id},
-    {'id': todo_3_id, 'name': 'Eier', 'description': '', 'list': todo_list_1_id},
+    {'id': todo_1_id, 'name': 'Milch', 'description': 'Einkaufslisteneintrag', 'list_id': todo_list_1_id, 'user_id': user_1_id},
+    {'id': todo_2_id, 'name': 'Arbeitsblätter ausdrucken', 'Einkaufslisteneintrag': '', 'list_id': todo_list_2_id, 'user_id': user_1_id},
+    {'id': todo_3_id, 'name': 'Kinokarten kaufen', 'Einkaufslisteneintrag': '', 'list_id': todo_list_3_id, 'user_id': user_1_id},
+    {'id': todo_3_id, 'name': 'Eier', 'Einkaufslisteneintrag': '', 'list_id': todo_list_1_id, 'user_id': user_1_id},
 ]
 
 # add some headers to allow cross origin access to the API on this server, necessary for using preview in Swagger Editor!
@@ -88,4 +84,4 @@ def get_all_lists():
 if __name__ == '__main__':
     # start Flask server
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)
