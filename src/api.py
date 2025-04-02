@@ -89,11 +89,18 @@ def get_all_lists():
         return jsonify(todo_lists)
     else: abort(405)
 
-# define endpoint for getting all lists
-@app.route('/lists', methods=['GET'])
-def get_all_lists():
-    return jsonify(todo_lists)
-
+@app.route('/todo-list/<list_id>/entries', methods=['GET'])
+def get_all_todos_for_list(list_id):
+    if not any(l['id'] == list_id for l in todo_lists):
+        abort(404)
+    if request.method == 'GET': 
+        temp_todos = []
+        for t in todos:
+            print(t)
+            if t['list_id'] == list_id:
+                temp_todos.append(t)
+        return jsonify(temp_todos), 200
+    else: abort(405)
 
 if __name__ == '__main__':
     # start Flask server
