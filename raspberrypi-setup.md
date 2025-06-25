@@ -1,178 +1,269 @@
-# Raspberry Pi - Anleitung Web App Deployement via Raspberry Pi
 
-Dies ist eine Schritt-für-Schritt-Anleitung zum Deployment einer in Python geschriebenen API auf einem Raspberry Pi mittels Docker.
+# 🧭 Raspberry Pi - Anleitung: Web-App Deployment via Docker
 
-#### Info: die <> klammern dienen als platzhalter, dort sollten Werte eingefügt werden
+Diese Schritt-für-Schritt-Anleitung beschreibt, wie man eine in **Python** geschriebene **Web-API** (z.B. mit Flask) auf einem **Raspberry Pi** mit Hilfe von **Docker** deployen kannst.
 
-## 1. Netzwerkkonfiguration via Networkmanager 
+> **Hinweis:** Platzhalter wie `<...>` müssen durch deine individuellen Werte ersetzt werden (z.B. `<connection profile>` -> `Wired connection 1`).
 
-Da der Raspberry PI als Server genutzt wird muss eine statische IP Adresse vergeben werden. Die Netwerkkonfiguration läuft wie folgt ab:
 
-### 1.1 Korrektes connection profile raussuchen
+## 🗂️ Übersicht: Schritte im Deployment-Prozess
 
-Mit dem Befehl:
+### In dieser Anleitung werden folgende Schritte durchlaufen:
+
+1. **Netzwerkkonfiguration**  
+   Vergabe einer statischen IP-Adresse für den Raspberry Pi per nmcli, um ihn dauerhaft im Netzwerk erreichbar zu machen.
+
+2. **Docker installieren und vorbereiten**  
+   Einrichtung der Container-Laufzeitumgebung auf dem Raspberry Pi.
+
+3. **Anwendung vorbereiten**  
+   Übertragung der Python-Datei auf den Pi und Vorbereitung des App-Verzeichnisses.
+
+4. **Dockerfile erstellen**  
+   Definition des Container-Images, das die Python-Anwendung ausführt.
+
+5. **Image bauen und starten**  
+   Erstellen und Ausführen des Docker-Containers, der die Web-API hostet.
+
+6. **Test und Zugriff**  
+   Aufrufen der API über den Browser und Überprüfung der Funktion.
+
+
+## 🔌 1. Netzwerkkonfiguration via `NetworkManager`
+
+Da der Raspberry Pi als Server eingesetzt wird, muss ihm eine **statische IP-Adresse** zugewiesen werden, um ihn im Netzwerk eindeutig und dauerhaft erreichen zu können.
+
+
+### 🔍 Erklärung: `nmcli`
+`nmcli` ist ein Kommandozeilenwerkzeug zur Verwaltung von Netzwerkverbindungen unter Linux - insbesondere mit dem NetworkManager. Damit lassen sich Netzwerkprofile konfigurieren, aktivieren, deaktivieren usw.
+
+### 1.1 Verfügbare Verbindungen anzeigen
 
 ```bash
 sudo nmcli -p connection show
 ```
 
-lassen sich alle connection profiles ausgeben. Um mit den weiteren schritten fortfahren zu können muss geklärt werden, ob eine WLAN oder Kabelverbindung besteht. Meistens kann das Ethernet Profil eth0 (Wired connection 1) genutzt werden.
+Dieser Befehl zeigt alle eingerichteten Verbindungen an. Entscheide anhand des Anschlusses, ob WLAN (z.B. `wlan0`) LAN (`eth0`) verwendet wird. Meistens wird LAN empfohlen (stabiler, schneller).
 
-### 1.2 Ip Adresse festlegen
+### 1.2 Statische IP-Adresse setzen
 
-````
-$ sudo nmcli c mod "<connection profile>" ipv4.addresses <ip/subnetzmaske> ipv4.method Manual
-````
+```bash
+sudo nmcli c mod "<connection profile>" ipv4.addresses <IP>/<Subnetzmaske> ipv4.method manual
+```
 
-### 1.3 IP Adresse nach korrektheit prüfen
+**Beispiel:** `192.168.1.100/24` bedeutet eine IP im Netz `192.168.1.x` mit Subnetzmaske `255.255.255.0`.
 
-````
-$ ifconfig
-````
+### 1.3 IP-Adresse überprüfen
 
-hat man z.B. eth0 konfiguriert sollte hier unter eth0 die IP erscheinen die bei Punkt 1.2 konfiguriert wurde. 
+```bash
+ifconfig
+```
 
-### 1.4 Gateway festlegen 
+Hier sollte unter dem entsprechenden Interface (`eth0` oder `wlan0`) die soeben konfigurierte IP-Adresse erscheinen.
 
-````
-$ sudo nmcli con mod "<connection profile>" ipv4.gateway <ip>
-````
+### 1.4 Gateway definieren
 
-### 1.5 Gateway prüfen
+```bash
+sudo nmcli con mod "<connection profile>" ipv4.gateway <Gateway-IP>
+```
 
-````
-$ ip route
-````
+Das Gateway ist in der Regel der Router - z.B. `192.168.1.1`.
 
-in der ersten Zeile sollte die in Punkt 1.4 hinterlegte IP zufinden sein. 
+### 1.5 Gateway überprüfen
 
-### 1.6 DNS festlegen
+```bash
+ip route
+```
 
-````
-$ sudo nmcli con mod "Wired connection 1" ipv4.dns 10.0.0.1 (192.168.24.254 oder 172.28.28)
-````
+In der ersten Zeile sollte nun das Gateway aufgeführt sein.
 
-### 1.7 DNS Konfiguration prüfen 
+### 1.6 DNS-Server einrichten
 
-Um die korrektheit der DNS Konfiguration zu prüfen kann folgender Befehl verwendet werden:
+```bash
+sudo nmcli con mod "<connection profile>" ipv4.dns <DNS-IP>
+```
 
-````
-$ nmcli device show | grep IP4.DNS
-````
+Gültige Beispiele: `8.8.8.8` (Google), `192.168.1.1` (lokaler Router), `1.1.1.1` (Cloudflare).
 
-### 1.8 Netzwerkverbindung neustarten 
+### 1.7 DNS-Konfiguration prüfen
 
-Um die Konfigurationen vollständig zu übernehmen, muss folgender Befehl ausgeführt werden: '
-'
-````
-$ sudo nmcli c down "<connection profile>" && sudo nmcli c up "<connection profile>"
-````
+```bash
+nmcli device show | grep IP4.DNS
+```
 
-### 2. Aufsetzen von Docker 
+Hier wird die aktuell verwendete DNS-Adresse(n) angezeigt.
 
-Docker wird verwendet, um die Web-App (in diesem Fall eine Python-Flask-API) in einem isolierten Container auszuführen. Dadurch ist sichergestellt, dass alle notwendigen Abhängigkeiten, Bibliotheken und die Laufzeitumgebung einheitlich und unabhängig vom Raspberry Pi System bereitgestellt werden können.
+### 1.8 Netzwerkverbindung neu starten
 
-### 2.1 Docker installieren 
+```bash
+sudo nmcli c down "<connection profile>" && sudo nmcli c up "<connection profile>"
+```
 
-Für die Installation von Docker wird der `apt` packet manager vom Raspberry Pi verwendet.
-
-````
-$ sudo apt install docker.io
-````
-
-### 2.2 Docker Installation testen 
-
-````
-$ sudo docker run hello-world
-````
-
-Dieser Befehl sollte in der Konsole ein `Hello from docker` anzeigen.
-
-### 2.3 Python Datei auf den Raspberry Pi kopieren
-
-Um das Docker Image basierend auf der Python API bauen zu können, muss der Python File erst auf den Raspberry Pi kopiert werden. 
-
-### 2.3.1 Verzeichniss für die app erstellen 
-
-Um einen Ordner erstellen zu können in den die wichtigen Files für die app kommen verwendet man den Befehl `mkdir`. Der Ordner wird in diesem Fall auf der obersten Ebene der Ordnerstruktur erstellt: 
-
-````
-$ sudo mkdir /app
-````
-
-### 2.4 Python File auf Raspberry Pi kopieren
-
-Um den FIle nun auf den Raspberry Pi zu kopieren muss die Konsole (CMD), in dem Pfad wo sich der Python File befindet, auf dem lokalen PC geöffnet werden. Dann kann wie folgt der Python File auf den Raspberry Pi kopiert werden: 
-
-````
-scp <lokale_datei> pi@<raspberry_ip>:/ziel/pfad
-````
-Falls der angegeben User passwortgeschützt ist muss ebenfalls das Passwort angegeben werden. 
-
-### 2.5 Starte des Docker Dienstes 
-
-Nach der Installation ist Docker muss der Docker-Dienst eventuell noch gestartet werden, bevor neue Container
-eingerichtet werden können:
-
-````
-$ sudo systemctl start docker.service
-````
-
-### 2.6 Erstellen eines neuen Docker Images
+Dieser Schritt ist notwendig, damit alle Änderungen aktiv werden.
 
 
-### 2.6.1 Erstellung des Docker Files
 
-Die Datei muss Dockerfile heißen:
+## 🐳 2. Docker installieren und konfigurieren
 
-````
-$ sudo touch DockerFile.txt
-````
-### 2.6.2 Die Dockerfile Datei anpassen
+### 🔍 Was ist Docker?
 
-Die Datei sollte wie folgt aussehen:
+**Docker** ist eine Plattform zur Erstellung, Auslieferung und Ausführung sogenannter **Container**. Ein Container ist eine abgeschottete Umgebung, die alle Abhängigkeiten, Konfigurationen und den Code einer Anwendung enthält. Dadurch lässt sich die App überall gleich ausführen - unabhängig von Systembibliotheken oder installierter Software.
 
-````
+Einfach gesagt: **"Docker verpackt die Anwendung in ein leichtgewichtiges Paket, das überall läuft."**
+
+### 🔍 Erklärung: `docker.io` vs. `docker`
+
+Man installiert mit `apt install docker.io` die in den Debian-/Ubuntu-Repositories enthaltene Version von Docker. Sie ist meistens nicht die allerneueste, aber stabil und für den Raspberry Pi gut geeignet.
+
+### 2.1 Docker installieren
+
+```bash
+sudo apt update
+sudo apt install docker.io
+```
+
+### 2.2 Docker testen
+
+```bash
+sudo docker run hello-world
+```
+
+Erfolgreiche Installation wird durch die Meldung `Hello from Docker!` bestätigt.
+
+
+## 📁 2.3 Vorbereitung: Python-Datei auf den Raspberry Pi bringen
+
+### 🔍 Erklärung: `scp`
+
+`scp` steht für "secure copy". Es kopiert Dateien über SSH von dem lokalen Rechner auf ein anderes System (z.B. dem Raspberry Pi).
+
+### 🔍 Erklärung: `mkdir`
+
+Der Befehl `mkdir` erstellt ein neues Verzeichnis (Ordner). Man brauchst dieses Verzeichnis, um dort die App und das Dockerfile abzulegen.
+
+### 2.3.1 Verzeichnis für App erstellen
+
+```bash
+sudo mkdir /app
+```
+
+### 2.3.2 Python-Datei kopieren
+
+Auf dem lokalen Rechner im Terminal (im Verzeichnis der Datei):
+
+```bash
+scp <lokale_datei.py> pi@<raspberry_ip>:/app
+```
+
+Es wird nach dem Passwort des Benutzers `pi` gefragt, sofern SSH-Zugriff aktiv ist.
+
+### 2.4 Docker-Dienst starten (falls nicht automatisch)
+
+```bash
+sudo systemctl start docker.service
+```
+
+Optional: Automatischer Start beim Boot:
+
+```bash
+sudo systemctl enable docker
+```
+
+---
+
+## 🏗️ 3. Docker-Image erstellen und App deployen
+
+### 🔍 Erklärung: Dockerfile
+
+Ein `Dockerfile` ist eine Textdatei, die Docker-Anweisungen enthält, um ein **Image** zu erstellen - also ein Bauplan für den Container.
+
+Darin steht z.B.:
+
+- Welche Programmiersprache (z.B. Python)
+- Welche Bibliotheken (z.B. Flask)
+- Welche Dateien sollen hineinkopiert werden?
+- Was soll beim Start ausgeführt werden?
+
+### 🔍 Erklärung: `touch`
+
+Der Befehl `touch` erstellt eine neue, leere Datei.
+
+### 3.1 Dockerfile erstellen
+
+```bash
+cd /app
+touch Dockerfile
+```
+
+Achte auf die **korrekte Groß-/Kleinschreibung**: `Dockerfile` (nicht `DockerFile.txt`).
+
+### 3.2 Inhalt des Dockerfiles
+
+```dockerfile
 # Dockerfile
 
-# Basisimage für Python-Anwendungen herunterladen
-FROM python:3.8-alpine
+FROM python:3.12-alpine
 
-# Notwendige Bibliotheken installieren
+# Flask installieren
 RUN pip install flask
 
-# Arbeitsverzeichnis im Container wechseln
+# Arbeitsverzeichnis im Container
 WORKDIR /app
 
-# Kopiere lokale Datei in das Container-Image
-COPY <Python file> /app
+# Kopiere Datei in Container
+COPY <python_file>.py /app
 
-# Konfiguriere den Befehl, der im Container ausgeführt werden soll
-# (Anwendung Python + Skriptname als Parameter)
-ENTRYPOINT [ "python" ]
-CMD ["<Python File>" ]
-````
+# Start der Anwendung
+ENTRYPOINT ["python"]
+CMD ["<python_file>.py"]
+```
 
-### 2.6.3 Image für den Docker Container bauen 
+Ersetze `<python_file>` durch den Dateinamen der App, z.B. `main.py`.
 
-Anschließend kann das Image für den neuen Container gebaut werden:
+### 🔍 Erklärung: `docker build`
 
-````
-$ sudo docker image build -t <container name> .
-````
+```bash
+docker image build -t webapp .
+```
 
-### 2.7 Ausführen des Images in dem angelegten Container 
+Dieser Befehl:
 
-Nach dem erfolgreichen Bauen kann der Container mit diesem Image gestartet werden:
+- baut ein Docker-Image anhand des `Dockerfile` im aktuellen Verzeichnis (`.`)
+- vergibt dem Image das Label (`Tag`) `webapp`
 
-````
-$ sudo docker run -p 5000:5000 -d webapp
-````
+### 3.3 Docker-Image bauen
 
-### 2.8 Laufende Docker Container anzeigen 
+```bash
+sudo docker image build -t webapp .
+```
 
-````
-$ sudo docker ps
-````
+### 🔍 Erklärung: `docker run` mit Parametern
 
+```bash
+sudo docker run -p 5000:5000 -d webapp
+```
 
+- `-p 5000:5000`: Portweiterleitung von Host zu Container
+- `-d`: Detached Mode (läuft im Hintergrund)
+- `webapp`: Name des Docker-Images
+
+### 3.4 Container ausführen
+
+```bash
+sudo docker run -p 5000:5000 -d webapp
+```
+
+### 🔍 Erklärung: `docker ps`
+
+```bash
+docker ps
+```
+
+-> Zeigt alle **laufenden** Container an, inklusive ID, Image, Namen und Ports.
+
+---
+
+## 🧪 4. Test und Zugriff
+
+- Rufe im Browser auf: `http://<raspberry_ip>:5000`
+- Wenn alles korrekt ist, sollte die API erreicht werden können.
